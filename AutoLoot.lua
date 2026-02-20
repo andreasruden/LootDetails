@@ -36,6 +36,7 @@ frame:SetScript("OnEvent", function(self, event, autoLoot)
     if event == "LOOT_OPENED" then
         if not autoLoot then return end
         if not LD.db or not LD.db.options.fastAutoLoot then return end
+        if not LD.enabled then return end
         -- Defer to next tick so Tracker.lua's LOOT_OPENED handler finishes scanning first
         C_Timer.After(0, startLooting)
     elseif event == "LOOT_CLOSED" then

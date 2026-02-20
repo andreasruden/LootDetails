@@ -19,6 +19,7 @@ function LD:Fire(event, ...)
 end
 
 LD.debug = true
+LD.enabled = true
 
 function LD:Log(...)
     if not self.debug then return end

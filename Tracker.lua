@@ -49,6 +49,7 @@ frame:RegisterEvent("LOOT_OPENED")
 frame:SetScript("OnEvent", function(self, event)
     if event ~= "LOOT_OPENED" then return end
     if not LD.db then return end
+    if not LD.enabled then return end
 
     local guid = GetLootSourceInfo(1)
     local npcID = creatureNPCID(guid)

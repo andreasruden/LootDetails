@@ -6,5 +6,6 @@
 ## SavedVariables: LootDetailsDB
 
 Init.lua
+Diagnostics.lua
 Tracker.lua
 AutoLoot.lua
