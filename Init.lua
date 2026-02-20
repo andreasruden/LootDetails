@@ -38,7 +38,9 @@ local defaults = {
 
 local function updateEnabledState()
     local inParty = IsInGroup()
-    LD.enabled = not inParty
+    local enabled = not inParty
+    if enabled == LD.enabled then return end
+    LD.enabled = enabled
     if inParty then
         LD:Log("disabled (in party)")
     else
