@@ -46,33 +46,32 @@ end
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("LOOT_OPENED")
 
-frame:SetScript("OnEvent", function(self, event)
+frame:SetScript("OnEvent", function(self, event, autoLoot)
     if event ~= "LOOT_OPENED" then return end
-    if not LD.db then return end
-    if not LD.enabled then return end
 
-    local guid = GetLootSourceInfo(1)
-    local npcID = creatureNPCID(guid)
-    if not npcID then return end
-
-    pruneRecentKills()
-
-    if LD.db.recentlyKilled[guid] then
-        LD:Log("skipping duplicate loot for guid", guid)
-        return
+    if LD.db and LD.enabled then
+        local guid = GetLootSourceInfo(1)
+        local npcID = creatureNPCID(guid)
+        if npcID then
+            pruneRecentKills()
+            if LD.db.recentlyKilled[guid] then
+                LD:Log("skipping duplicate loot for guid", guid)
+            else
+                LD.db.recentlyKilled[guid] = time()
+                local items = collectItems()
+                LD:Log("KILL_LOOTED npcID=" .. npcID .. " (" .. #items .. " items)")
+                for _, item in ipairs(items) do
+                    LD:Log("  " .. item.itemLink .. " x" .. item.quantity)
+                end
+                LD:Fire("KILL_LOOTED", {
+                    guid      = guid,
+                    npcID     = npcID,
+                    items     = items,
+                    timestamp = time(),
+                })
+            end
+        end
     end
-    LD.db.recentlyKilled[guid] = time()
 
-    local items = collectItems()
-    LD:Log("KILL_LOOTED npcID=" .. npcID .. " (" .. #items .. " items)")
-    for _, item in ipairs(items) do
-        LD:Log("  " .. item.itemLink .. " x" .. item.quantity)
-    end
-
-    LD:Fire("KILL_LOOTED", {
-        guid      = guid,
-        npcID     = npcID,
-        items     = items,
-        timestamp = time(),
-    })
+    LD:Fire("LOOT_SCANNED", autoLoot)
 end)
