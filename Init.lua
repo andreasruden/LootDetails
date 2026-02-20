@@ -30,6 +30,9 @@ local defaults = {
     sessions         = {},
     totalLoot        = {},
     recentlyKilled   = {},   -- [guid] = timestamp; pruned after 15 min
+    options          = {
+        fastAutoLoot = true,
+    },
 }
 
 local frame = CreateFrame("Frame")

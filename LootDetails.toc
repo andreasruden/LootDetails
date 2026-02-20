@@ -7,3 +7,4 @@
 
 Init.lua
 Tracker.lua
+AutoLoot.lua
