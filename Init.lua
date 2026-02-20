@@ -36,9 +36,20 @@ local defaults = {
     },
 }
 
+local function updateEnabledState()
+    local inParty = IsInGroup()
+    LD.enabled = not inParty
+    if inParty then
+        LD:Log("disabled (in party)")
+    else
+        LD:Log("enabled (solo)")
+    end
+end
+
 local frame = CreateFrame("Frame")
 
 frame:RegisterEvent("ADDON_LOADED")
+frame:RegisterEvent("GROUP_ROSTER_UPDATE")
 
 frame:SetScript("OnEvent", function(self, event, ...)
     if event == "ADDON_LOADED" then
@@ -52,6 +63,9 @@ frame:SetScript("OnEvent", function(self, event, ...)
 
         LD.db = LootDetailsDB
 
+        updateEnabledState()
         print("|cff00ccff[LootDetails]|r Loaded.")
+    elseif event == "GROUP_ROSTER_UPDATE" then
+        updateEnabledState()
     end
 end)
