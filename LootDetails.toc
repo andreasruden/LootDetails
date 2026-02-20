@@ -1,0 +1,8 @@
+## Interface: 11507
+## Title: Loot Details
+## Notes: An addon for WoW classic to track looting and farming statistics
+## Author: Shiro
+## Version: 1.0.0
+## SavedVariables: LootDetailsDB
+
+Init.lua
