@@ -22,6 +22,19 @@ local function pruneRecentKills()
     end
 end
 
+-- Returns the source GUID for the current loot window.
+-- Falls back to UnitGUID("target") for empty corpses (no loot slots available).
+local function getSourceGUID()
+    if GetNumLootItems() > 0 then
+        return GetLootSourceInfo(1)
+    end
+    local guid = UnitGUID("target")
+    if creatureNPCID(guid) then
+        return guid
+    end
+    return nil
+end
+
 local function collectItems()
     local items = {}
     for slot = 1, GetNumLootItems() do
@@ -43,6 +56,33 @@ local function collectItems()
     return items
 end
 
+-- Parses a WoW money string (e.g. "7 Silver\n14 Copper") into copper.
+-- Uses WoW's locale format strings so it works across languages.
+local function moneyStringToCopper(s)
+    if not s then return 0 end
+    local copper = 0
+    local function extract(fmt, multiplier)
+        local pattern = fmt:gsub("%%d", "(%%d+)")
+        local n = s:match(pattern)
+        if n then copper = copper + tonumber(n) * multiplier end
+    end
+    extract(GOLD_AMOUNT,   10000)
+    extract(SILVER_AMOUNT, 100)
+    extract(COPPER_AMOUNT, 1)
+    return copper
+end
+
+local function collectGold()
+    local copper = 0
+    for slot = 1, GetNumLootItems() do
+        if GetLootSlotType(slot) == LOOT_SLOT_MONEY then
+            local _, moneyString = GetLootSlotInfo(slot)
+            copper = copper + moneyStringToCopper(moneyString)
+        end
+    end
+    return copper
+end
+
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("LOOT_OPENED")
 
@@ -50,7 +90,7 @@ frame:SetScript("OnEvent", function(self, event, autoLoot)
     if event ~= "LOOT_OPENED" then return end
 
     if LD.db and LD.enabled then
-        local guid = GetLootSourceInfo(1)
+        local guid = getSourceGUID()
         local npcID = creatureNPCID(guid)
         if npcID then
             pruneRecentKills()
@@ -59,7 +99,8 @@ frame:SetScript("OnEvent", function(self, event, autoLoot)
             else
                 LD.db.recentlyKilled[guid] = time()
                 local items = collectItems()
-                LD:Log("KILL_LOOTED npcID=" .. npcID .. " (" .. #items .. " items)")
+                local gold = collectGold()
+                LD:Log("KILL_LOOTED npcID=" .. npcID .. " (" .. #items .. " items, " .. gold .. " copper)")
                 for _, item in ipairs(items) do
                     LD:Log("  " .. item.itemLink .. " x" .. item.quantity)
                 end
@@ -67,6 +108,7 @@ frame:SetScript("OnEvent", function(self, event, autoLoot)
                     guid      = guid,
                     npcID     = npcID,
                     items     = items,
+                    gold      = gold,
                     timestamp = time(),
                 })
             end
