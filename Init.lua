@@ -29,7 +29,7 @@ end
 local defaults = {
     currentSessionId = -1,
     sessions         = {},
-    totalLoot        = {},
+    mobLoot          = {},
     recentlyKilled   = {},   -- [guid] = timestamp; pruned after 15 min
     options          = {
         fastAutoLoot = true,
