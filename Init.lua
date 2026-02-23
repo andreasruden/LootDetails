@@ -34,6 +34,7 @@ local defaults = {
     options          = {
         fastAutoLoot = true,
     },
+    minimapButton    = {},
 }
 
 local function updateEnabledState()
