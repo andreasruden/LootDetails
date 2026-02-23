@@ -18,7 +18,7 @@ function LD:Fire(event, ...)
     end
 end
 
-LD.debug = true
+LD.debug = false
 LD.enabled = true
 
 function LD:Log(...)
@@ -33,6 +33,7 @@ local defaults = {
     recentlyKilled   = {},   -- [guid] = timestamp; pruned after 15 min
     options          = {
         fastAutoLoot = true,
+        debug        = false,
     },
     minimapButton    = {},
 }
@@ -65,6 +66,7 @@ frame:SetScript("OnEvent", function(self, event, ...)
         end
 
         LD.db = LootDetailsDB
+        LD.debug = LD.db.options.debug or false
 
         updateEnabledState()
         print("|cff00ccff[LootDetails]|r Loaded.")

@@ -9,7 +9,7 @@ local dataObject = LDB:NewDataObject("LootDetails", {
 
     OnClick = function(self, button)
         if button == "RightButton" then
-            print("|cff00ccff[LootDetails]|r Options (stub).")
+            Settings.OpenToCategory(LD.optionsCategory:GetID())
             return
         end
 

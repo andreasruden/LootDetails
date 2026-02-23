@@ -7,6 +7,7 @@
 
 Libs/embeds.xml
 Init.lua
+Options.lua
 Diagnostics.lua
 Tracker.lua
 Ledger.lua
