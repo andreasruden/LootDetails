@@ -5,11 +5,12 @@ LD:On("KILL_LOOTED", function(lootData)
     local npcID = lootData.npcID
 
     if not mobLoot[npcID] then
-        mobLoot[npcID] = { kills = 0, drops = {} }
+        mobLoot[npcID] = { kills = 0, totalGold = 0, drops = {} }
     end
 
     local entry = mobLoot[npcID]
     entry.kills = entry.kills + 1
+    entry.totalGold = (entry.totalGold or 0) + lootData.gold
 
     local drops = entry.drops
     for _, item in ipairs(lootData.items) do

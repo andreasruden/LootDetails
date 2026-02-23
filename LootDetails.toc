@@ -10,3 +10,4 @@ Diagnostics.lua
 Tracker.lua
 Ledger.lua
 AutoLoot.lua
+SlashCommands.lua
