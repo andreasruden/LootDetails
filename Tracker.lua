@@ -84,11 +84,9 @@ local function collectGold()
 end
 
 local frame = CreateFrame("Frame")
-frame:RegisterEvent("LOOT_OPENED")
+frame:RegisterEvent("LOOT_READY")
 
 frame:SetScript("OnEvent", function(self, event, autoLoot)
-    if event ~= "LOOT_OPENED" then return end
-
     if LD.db and LD.enabled then
         local guid = getSourceGUID()
         local npcID = creatureNPCID(guid)
