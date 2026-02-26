@@ -2,7 +2,6 @@ local LD = LootDetails
 
 local lootTicker = nil
 local isAutoLooting = false
-local hasFailure = false
 
 -- Hidden frame used as LootFrame's parent to suppress it (inherits hidden state).
 -- Matches SpeedyAutoLoot's _frame approach.
@@ -73,11 +72,10 @@ frame:RegisterEvent("LOOT_CLOSED")
 frame:RegisterEvent("UI_ERROR_MESSAGE")
 frame:SetScript("OnEvent", function(_, event, ...)
     if event == "LOOT_CLOSED" then
-        LD:Log("LOOT_CLOSED isAutoLooting=", isAutoLooting, "hasFailure=", hasFailure)
+        LD:Log("LOOT_CLOSED isAutoLooting=", isAutoLooting)
         cancelTicker()
         hideLootFrame("LOOT_CLOSED")
         isAutoLooting = false
-        hasFailure = false
     elseif event == "UI_ERROR_MESSAGE" then
         -- Classic may pass 1 or 2 args; message is the second when 2 are present
         local arg1, arg2 = ...
@@ -96,7 +94,6 @@ LD:On("LOOT_SCANNED", function(autoLoot)
     end
 
     isAutoLooting = true
-    hasFailure = false
 
     cancelTicker()
     local slot = GetNumLootItems()
@@ -112,15 +109,14 @@ LD:On("LOOT_SCANNED", function(autoLoot)
                     LootSlot(slot)
                 else
                     LD:Log("slot", slot, "skipped locked=", locked, "link=", itemLink)
-                    hasFailure = true
                 end
             else
                 LootSlot(slot) -- money / currency: always loot
             end
             slot = slot - 1
         else
-            LD:Log("ticker done hasFailure=", hasFailure)
-            if hasFailure then showLootFrame("ticker done with failure") end
+            LD:Log("ticker done remaining=", GetNumLootItems())
+            if GetNumLootItems() > 0 then showLootFrame("ticker done with items remaining") end
             cancelTicker()
         end
     end, slot + 1)
