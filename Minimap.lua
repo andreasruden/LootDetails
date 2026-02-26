@@ -18,7 +18,11 @@ local dataObject = LDB:NewDataObject("LootDetails", {
             local guid = UnitGUID("target")
             -- GUID format: "Creature-0-XXXX-XXXX-XXXX-NPCID-XXXX"
             local npcId = guid and tonumber(guid:match("%-(%d+)%-[^%-]+$"))
-            print("|cff00ccff[LootDetails]|r NPC stats stub — npcID:", npcId or "unknown")
+            if npcId then
+                LootWindow:Show(npcId)
+            else
+                print("|cff00ccff[LootDetails]|r Could not determine NPC ID from GUID:", tostring(guid))
+            end
         else
             print("|cff00ccff[LootDetails]|r New farming session stub.")
         end

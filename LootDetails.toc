@@ -13,4 +13,5 @@ Tracker.lua
 Ledger.lua
 AutoLoot.lua
 SlashCommands.lua
+LootWindow.lua
 Minimap.lua
