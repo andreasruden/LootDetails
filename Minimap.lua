@@ -24,7 +24,7 @@ local dataObject = LDB:NewDataObject("LootDetails", {
                 print("|cff00ccff[LootDetails]|r Could not determine NPC ID from GUID:", tostring(guid))
             end
         else
-            print("|cff00ccff[LootDetails]|r New farming session stub.")
+            LD:StartSession()
         end
     end,
 
