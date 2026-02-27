@@ -23,6 +23,8 @@ local dataObject = LDB:NewDataObject("LootDetails", {
             else
                 print("|cff00ccff[LootDetails]|r Could not determine NPC ID from GUID:", tostring(guid))
             end
+        elseif LD:GetActiveSession() then
+            LD:Fire("SESSION_WINDOW_OPEN")
         else
             LD:StartSession()
         end

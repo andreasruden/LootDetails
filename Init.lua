@@ -36,6 +36,7 @@ local defaults = {
         debug        = false,
     },
     minimapButton    = {},
+    farmingWindowPos = nil,   -- { x, y } TOPLEFT screen coords; nil = center
 }
 
 local function updateEnabledState()

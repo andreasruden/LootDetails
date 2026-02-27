@@ -12,6 +12,7 @@ Diagnostics.lua
 Tracker.lua
 Ledger.lua
 FarmingSession.lua
+FarmingSessionWindow.lua
 AutoLoot.lua
 SlashCommands.lua
 LootWindow.lua
