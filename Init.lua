@@ -32,8 +32,11 @@ local defaults = {
     mobLoot          = {},
     recentlyKilled   = {},   -- [guid] = timestamp; pruned after 15 min
     options          = {
-        fastAutoLoot = true,
-        debug        = false,
+        fastAutoLoot                = true,
+        debug                       = false,
+        equipmentMinRarity          = 2,    -- 0=gray,1=white,2=green,3=blue,4=purple,5=orange
+        equipmentMarketMultiplier   = 2.0,  -- market must be >= N × vendor price
+        tradegoodsMarketMultiplier  = 1.5,  -- same, for consumables/gems/tradeskill/recipes
     },
     minimapButton    = {},
     farmingWindowPos = nil,   -- { x, y } TOPLEFT screen coords; nil = center

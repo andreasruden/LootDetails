@@ -134,7 +134,7 @@ local function update()
     valTime:SetText(formatTime(elapsed))
     valRaw:SetText(copperToString(session.rawGold or 0))
     valVendor:SetText(copperToString(session.vendorValue or 0))
-    valEconomy:SetText("--")
+    valEconomy:SetText(copperToString(session.economyValue or 0))
 
     local total = (session.rawGold or 0) + (session.vendorValue or 0) + (session.economyValue or 0)
     valTotal:SetText(copperToString(total))

@@ -1,7 +1,44 @@
 local LD = LootDetails
 
--- { sessionId, itemID, quantity } for items whose sell price wasn't in cache yet
+local MARKETABLE_CLASSES = {
+    [LE_ITEM_CLASS_CONSUMABLE]  = true,
+    [LE_ITEM_CLASS_CONTAINER]   = true,
+    [LE_ITEM_CLASS_GEM]         = true,
+    [LE_ITEM_CLASS_TRADEGOODS]  = true,
+    [LE_ITEM_CLASS_RECIPE]      = true,
+}
+
+-- { sessionId, itemID, quantity, itemLink, quality } for items whose info wasn't in cache yet
 local pending = {}
+
+-- sellPrice and classID are the pre-fetched results from GetItemInfo(item.itemID).
+local function classifyItem(item, sellPrice, classID)
+    if item.quality == 0 then return "vendor" end
+
+    local opts = LD.db.options
+
+    if classID == LE_ITEM_CLASS_WEAPON or classID == LE_ITEM_CLASS_ARMOR then
+        local minRarity = opts.equipmentMinRarity or 2
+        local mult      = opts.equipmentMarketMultiplier or 2.0
+        if item.quality >= minRarity then
+            local mv = LD:GetMarketValue(item.itemLink)
+            if mv and (sellPrice or 0) > 0 and mv >= sellPrice * mult then
+                return "market"
+            end
+        end
+        return "vendor"
+    end
+
+    if MARKETABLE_CLASSES[classID] then
+        local mult = opts.tradegoodsMarketMultiplier or 1.5
+        local mv   = LD:GetMarketValue(item.itemLink)
+        if mv and (sellPrice or 0) > 0 and mv >= sellPrice * mult then
+            return "market"
+        end
+    end
+
+    return "vendor"
+end
 
 local queryFrame = CreateFrame("Frame")
 queryFrame:SetScript("OnEvent", function(self, event, itemID, success)
@@ -12,8 +49,20 @@ queryFrame:SetScript("OnEvent", function(self, event, itemID, success)
         if entry.itemID == itemID then
             local session = LD.db.sessions[entry.sessionId]
             if session then
-                local sellPrice = select(11, GetItemInfo(itemID)) or 0
-                session.vendorValue = session.vendorValue + sellPrice * entry.quantity
+                local _, _, _, _, _, _, _, _, _, _, sellPrice, classID = GetItemInfo(itemID)
+                sellPrice = sellPrice or 0
+                local pseudoItem = { quality = entry.quality, itemLink = entry.itemLink, itemID = entry.itemID }
+                local classification = classifyItem(pseudoItem, sellPrice, classID)
+                if classification == "market" then
+                    local mv = LD:GetMarketValue(entry.itemLink)
+                    if mv then
+                        session.economyValue = session.economyValue + mv * entry.quantity
+                    else
+                        session.vendorValue = session.vendorValue + sellPrice * entry.quantity
+                    end
+                else
+                    session.vendorValue = session.vendorValue + sellPrice * entry.quantity
+                end
             end
         else
             remaining[#remaining + 1] = entry
@@ -61,20 +110,38 @@ LD:On("KILL_LOOTED", function(lootData)
     local sessionId = LD.db.currentSessionId
     local items = {}
     local vendorValue = 0
+    local economyValue = 0
     for _, item in ipairs(lootData.items) do
         items[#items + 1] = { itemID = item.itemID, quantity = item.quantity, itemLink = item.itemLink }
-        local sellPrice = select(11, GetItemInfo(item.itemID))
-        if sellPrice then
-            vendorValue = vendorValue + sellPrice * item.quantity
+        local _, _, _, _, _, _, _, _, _, _, sellPrice, classID = GetItemInfo(item.itemID)
+        if classID then
+            local classification = classifyItem(item, sellPrice or 0, classID)
+            if classification == "market" then
+                local mv = LD:GetMarketValue(item.itemLink)
+                if mv then
+                    economyValue = economyValue + mv * item.quantity
+                else
+                    vendorValue = vendorValue + (sellPrice or 0) * item.quantity
+                end
+            else
+                vendorValue = vendorValue + (sellPrice or 0) * item.quantity
+            end
         else
-            -- GetItemInfo already triggered a server query; apply sell price when it arrives
-            pending[#pending + 1] = { sessionId = sessionId, itemID = item.itemID, quantity = item.quantity }
+            -- GetItemInfo already triggered a server query; apply value when it arrives
+            pending[#pending + 1] = {
+                sessionId = sessionId,
+                itemID    = item.itemID,
+                quantity  = item.quantity,
+                itemLink  = item.itemLink,
+                quality   = item.quality,
+            }
             queryFrame:RegisterEvent("GET_ITEM_INFO_RECEIVED")
         end
     end
 
-    session.rawGold     = session.rawGold + lootData.gold
-    session.vendorValue = session.vendorValue + vendorValue
+    session.rawGold      = session.rawGold + lootData.gold
+    session.vendorValue  = session.vendorValue + vendorValue
+    session.economyValue = session.economyValue + economyValue
 
     table.insert(session.kills, {
         timestamp = time(),
