@@ -96,27 +96,53 @@ LD:On("LOOT_SCANNED", function(autoLoot)
     isAutoLooting = true
 
     cancelTicker()
-    local slot = GetNumLootItems()
+    local numSlots = GetNumLootItems()
+
+    -- Items at or above the group's loot threshold will be rolled on and must not be auto-looted.
+    local lootThreshold = 10 -- above max quality; effectively skips nothing when solo
+    if IsInGroup() then
+        local lootMethod = C_PartyInfo and C_PartyInfo.GetLootMethod and C_PartyInfo.GetLootMethod() or GetLootMethod()
+        local isRollMethod = lootMethod == "group" or lootMethod == "needbeforegreed" or lootMethod == "master"
+            or (Enum.LootMethod and (lootMethod == Enum.LootMethod.Group
+                or lootMethod == Enum.LootMethod.Needbeforegreed
+                or lootMethod == Enum.LootMethod.Masterlooter))
+        if isRollMethod then lootThreshold = GetLootThreshold() end
+    end
+
+    -- Snapshot slots to skip: already locked (no loot rights) or at/above the roll threshold.
+    -- Slots that become locked after this are in-flight from our own LootSlot calls.
+    local preLockedSlots = {}
+    for i = 1, numSlots do
+        local _, _, _, _, quality, locked = GetLootSlotInfo(i)
+        if locked or (quality and quality >= lootThreshold) then preLockedSlots[i] = true end
+    end
+
+    local slot = numSlots
+    local shouldShowFrame = false
     LD:Log("starting ticker slots=", slot)
     lootTicker = C_Timer.NewTicker(0.033, function()
         if slot >= 1 then
             local slotType = GetLootSlotType(slot)
-            if slotType == Enum.LootSlotType.Item then
-                -- Anniversary (modern client): name, texture, quantity, currencyID, quality, locked
+            if slotType == LOOT_SLOT_ITEM then
                 local _, _, quantity, _, _, locked = GetLootSlotInfo(slot)
                 local itemLink = GetLootSlotLink(slot)
-                if not locked and itemFitsInBags(itemLink, quantity) then
+                if preLockedSlots[slot] then
+                    LD:Log("slot", slot, "skipped pre-locked link=", itemLink)
+                    shouldShowFrame = true
+                elseif not locked and itemFitsInBags(itemLink, quantity) then
                     LootSlot(slot)
-                else
-                    LD:Log("slot", slot, "skipped locked=", locked, "link=", itemLink)
+                elseif not locked then
+                    LD:Log("slot", slot, "skipped bags full link=", itemLink)
+                    shouldShowFrame = true
                 end
+                -- else: locked and not pre-locked = in-flight from our LootSlot call
             else
                 LootSlot(slot) -- money / currency: always loot
             end
             slot = slot - 1
         else
-            LD:Log("ticker done remaining=", GetNumLootItems())
-            if GetNumLootItems() > 0 then showLootFrame("ticker done with items remaining") end
+            LD:Log("ticker done remaining=", GetNumLootItems(), "shouldShowFrame=", shouldShowFrame)
+            if shouldShowFrame then showLootFrame("ticker done with items remaining") end
             cancelTicker()
         end
     end, slot + 1)

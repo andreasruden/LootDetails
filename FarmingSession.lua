@@ -1,11 +1,20 @@
 local LD = LootDetails
 
+-- LE_ITEM_CLASS_* globals are not available in Classic Era.
+local ITEM_CLASS_CONSUMABLE  = 0
+local ITEM_CLASS_CONTAINER   = 1
+local ITEM_CLASS_WEAPON      = 2
+local ITEM_CLASS_GEM         = 3
+local ITEM_CLASS_ARMOR       = 4
+local ITEM_CLASS_TRADEGOODS  = 7
+local ITEM_CLASS_RECIPE      = 9
+
 local MARKETABLE_CLASSES = {
-    [LE_ITEM_CLASS_CONSUMABLE]  = true,
-    [LE_ITEM_CLASS_CONTAINER]   = true,
-    [LE_ITEM_CLASS_GEM]         = true,
-    [LE_ITEM_CLASS_TRADEGOODS]  = true,
-    [LE_ITEM_CLASS_RECIPE]      = true,
+    [ITEM_CLASS_CONSUMABLE]  = true,
+    [ITEM_CLASS_CONTAINER]   = true,
+    [ITEM_CLASS_GEM]         = true,
+    [ITEM_CLASS_TRADEGOODS]  = true,
+    [ITEM_CLASS_RECIPE]      = true,
 }
 
 -- { sessionId, itemID, quantity, itemLink, quality } for items whose info wasn't in cache yet
@@ -17,7 +26,7 @@ local function classifyItem(item, sellPrice, classID)
 
     local opts = LD.db.options
 
-    if classID == LE_ITEM_CLASS_WEAPON or classID == LE_ITEM_CLASS_ARMOR then
+    if classID == ITEM_CLASS_WEAPON or classID == ITEM_CLASS_ARMOR then
         local minRarity = opts.equipmentMinRarity or 2
         local mult      = opts.equipmentMarketMultiplier or 2.0
         if item.quality >= minRarity then

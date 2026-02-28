@@ -39,7 +39,7 @@ local function collectItems()
     local items = {}
     for slot = 1, GetNumLootItems() do
         if GetLootSlotType(slot) == LOOT_SLOT_ITEM then
-            local name, texture, quantity, quality = GetLootSlotInfo(slot)
+            local name, texture, quantity, _, quality, locked = GetLootSlotInfo(slot)
             local link = GetLootSlotLink(slot)
             if link then
                 table.insert(items, {
@@ -49,6 +49,7 @@ local function collectItems()
                     quantity = quantity or 1,
                     quality  = quality,
                     texture  = texture,
+                    locked   = locked,
                 })
             end
         end
@@ -100,7 +101,7 @@ frame:SetScript("OnEvent", function(self, event, autoLoot)
                 local gold = collectGold()
                 LD:Log("KILL_LOOTED npcID=" .. npcID .. " (" .. #items .. " items, " .. gold .. " copper)")
                 for _, item in ipairs(items) do
-                    LD:Log("  " .. item.itemLink .. " x" .. item.quantity)
+                    LD:Log("  " .. item.itemLink .. " x" .. item.quantity .. (item.locked and " [locked]" or ""))
                 end
                 LD:Fire("KILL_LOOTED", {
                     guid      = guid,
