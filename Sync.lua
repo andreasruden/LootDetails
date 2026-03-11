@@ -170,6 +170,7 @@ syncFrame:SetScript("OnEvent", function(self, event, ...)
     elseif event == "CHAT_MSG_ADDON" then
         local prefix, msg, _, sender = ...
         if prefix ~= "LootDetails" then return end
+        if LD.disabledReason ~= "party" then return end
         local name = Ambiguate(sender, "short")
         if name == Ambiguate(UnitName("player"), "short") then return end  -- skip self-echo
 
