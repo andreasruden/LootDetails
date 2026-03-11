@@ -88,28 +88,25 @@ local frame = CreateFrame("Frame")
 frame:RegisterEvent("LOOT_READY")
 
 frame:SetScript("OnEvent", function(self, event, autoLoot)
-    if LD.db and LD.enabled then
+    if LD.db then
         local guid = getSourceGUID()
         local npcID = creatureNPCID(guid)
         if npcID then
             pruneRecentKills()
-            if LD.db.recentlyKilled[guid] then
-                LD:Log("skipping duplicate loot for guid", guid)
-            else
+            if not LD.db.recentlyKilled[guid] then
                 LD.db.recentlyKilled[guid] = time()
                 local items = collectItems()
                 local gold = collectGold()
-                LD:Log("KILL_LOOTED npcID=" .. npcID .. " (" .. #items .. " items, " .. gold .. " copper)")
-                for _, item in ipairs(items) do
-                    LD:Log("  " .. item.itemLink .. " x" .. item.quantity .. (item.locked and " [locked]" or ""))
+                local loot = { guid = guid, npcID = npcID, items = items, gold = gold, timestamp = time() }
+                if LD.disabledReason == nil then
+                    LD:Log("KILL_LOOTED npcID=" .. npcID .. " (" .. #items .. " items, " .. gold .. " copper)")
+                    LD:Fire("KILL_LOOTED", loot)
+                elseif LD.disabledReason == "party" then
+                    LD:Log("KILL_LOOT_SHARED npcID=" .. npcID)
+                    LD:Fire("KILL_LOOT_SHARED", loot)
                 end
-                LD:Fire("KILL_LOOTED", {
-                    guid      = guid,
-                    npcID     = npcID,
-                    items     = items,
-                    gold      = gold,
-                    timestamp = time(),
-                })
+            else
+                LD:Log("skipping duplicate loot for guid", guid)
             end
         end
     end

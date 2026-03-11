@@ -33,6 +33,27 @@ local dataObject = LDB:NewDataObject("LootDetails", {
     OnTooltipShow = function(tooltip)
         tooltip:AddLine("LootDetails")
         tooltip:AddLine(" ")
+
+        local status = LD:GetSyncStatus()
+        if status.mode == "solo" then
+            tooltip:AddLine("|cff00ff00Active Solo|r")
+        elseif status.mode == "party_active" then
+            tooltip:AddLine("|cff00ff00Active in Party|r")
+        else
+            if #status.unmatched == 0 then
+                tooltip:AddLine("|cffffff00Inactive in Party|r")
+            else
+                for _, m in ipairs(status.unmatched) do
+                    if m.reason == "no_addon" then
+                        tooltip:AddLine("|cffff4444Inactive|r — " .. m.name .. " does not have addon")
+                    else
+                        tooltip:AddLine("|cffff4444Inactive|r — " .. m.name .. " has a different version")
+                    end
+                end
+            end
+        end
+
+        tooltip:AddLine(" ")
         tooltip:AddLine("|cffeda55fLeft-click|r (hostile NPC targeted): show NPC stats")
         tooltip:AddLine("|cffeda55fLeft-click|r (no hostile target): start farming session")
         tooltip:AddLine("|cffeda55fRight-click|r: open options")

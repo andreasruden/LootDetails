@@ -11,6 +11,7 @@ MarketValue.lua
 Options.lua
 Diagnostics.lua
 Tracker.lua
+Sync.lua
 Ledger.lua
 FarmingSession.lua
 FarmingSessionWindow.lua

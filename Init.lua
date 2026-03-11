@@ -19,7 +19,7 @@ function LD:Fire(event, ...)
 end
 
 LD.debug = false
-LD.enabled = true
+LD.disabledReason = nil  -- nil = active; string = why disabled (e.g. "party", "SpeedyAutoLoot")
 
 function LD:Log(...)
     if not self.debug then return end
@@ -43,11 +43,12 @@ local defaults = {
 }
 
 local function updateEnabledState()
-    local inParty = IsInGroup()
-    local enabled = not inParty
-    if enabled == LD.enabled then return end
-    LD.enabled = enabled
-    if inParty then
+    -- Don't overwrite a conflict-based disable reason with party state
+    if LD.disabledReason and LD.disabledReason ~= "party" then return end
+    local reason = IsInGroup() and "party" or nil
+    if reason == LD.disabledReason then return end
+    LD.disabledReason = reason
+    if reason then
         LD:Log("disabled (in party)")
     else
         LD:Log("enabled (solo)")
