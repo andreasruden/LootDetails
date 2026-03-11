@@ -181,8 +181,14 @@ syncFrame:SetScript("OnEvent", function(self, event, ...)
             updateSyncActive()
         elseif msg:sub(1, 6) == "Hello " then
             local ver = msg:sub(7)
+            local isNew = not memberVersions[name]
             memberVersions[name] = ver
             LD:Log("Sync: got Hello from " .. name .. " v" .. ver)
+            if isNew then
+                -- They may have missed our Hi; reply so they learn our version
+                LD:Log("Sync: replying Hello to unsolicited Hello from " .. name)
+                C_ChatInfo.SendAddonMessage("LootDetails", "Hello " .. myVersion, "PARTY")
+            end
             updateSyncActive()
         elseif msg:sub(1, 5) == "LOOT|" then
             if not syncActive then return end
