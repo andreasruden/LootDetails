@@ -112,16 +112,10 @@ function LD:StartSession()
     LD:Fire("SESSION_STARTED")
 end
 
-LD:On("KILL_LOOTED", function(lootData)
-    local session = activeSession()
-    if not session or session.paused then return end
-
-    local sessionId = LD.db.currentSessionId
-    local items = {}
+local function applyItemsToSession(session, sessionId, lootData)
     local vendorValue = 0
     local economyValue = 0
     for _, item in ipairs(lootData.items) do
-        items[#items + 1] = { itemID = item.itemID, quantity = item.quantity, itemLink = item.itemLink }
         local _, _, _, _, _, _, _, _, _, _, sellPrice, classID = GetItemInfo(item.itemID)
         if classID then
             local classification = classifyItem(item, sellPrice or 0, classID)
@@ -147,10 +141,22 @@ LD:On("KILL_LOOTED", function(lootData)
             queryFrame:RegisterEvent("GET_ITEM_INFO_RECEIVED")
         end
     end
-
-    session.rawGold      = session.rawGold + lootData.gold
     session.vendorValue  = session.vendorValue + vendorValue
     session.economyValue = session.economyValue + economyValue
+end
+
+LD:On("KILL_LOOTED", function(lootData)
+    local session = activeSession()
+    if not session or session.paused then return end
+
+    local sessionId = LD.db.currentSessionId
+    local items = {}
+    for _, item in ipairs(lootData.items) do
+        items[#items + 1] = { itemID = item.itemID, quantity = item.quantity, itemLink = item.itemLink }
+    end
+
+    session.rawGold = session.rawGold + lootData.gold
+    applyItemsToSession(session, sessionId, lootData)
 
     table.insert(session.kills, {
         timestamp = time(),
@@ -159,6 +165,29 @@ LD:On("KILL_LOOTED", function(lootData)
         gold      = lootData.gold,
         items     = items,
     })
+end)
+
+LD:On("KILL_LOOT_ADDENDUM", function(lootData)
+    local session = activeSession()
+    if not session or session.paused then return end
+
+    -- Find the existing kill entry for this guid and append late loot to it
+    local killEntry
+    for _, k in ipairs(session.kills) do
+        if k.guid == lootData.guid then
+            killEntry = k
+            break
+        end
+    end
+    if not killEntry then return end
+
+    local sessionId = LD.db.currentSessionId
+    for _, item in ipairs(lootData.items) do
+        killEntry.items[#killEntry.items + 1] = { itemID = item.itemID, quantity = item.quantity, itemLink = item.itemLink }
+    end
+    killEntry.gold = killEntry.gold + lootData.gold
+    session.rawGold = session.rawGold + lootData.gold
+    applyItemsToSession(session, sessionId, lootData)
 end)
 
 function LD:GetActiveSession()

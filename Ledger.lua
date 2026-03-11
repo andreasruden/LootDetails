@@ -1,15 +1,6 @@
 local LD = LootDetails
 
-LD:On("KILL_LOOTED", function(lootData)
-    local mobLoot = LD.db.mobLoot
-    local npcID = lootData.npcID
-
-    if not mobLoot[npcID] then
-        mobLoot[npcID] = { kills = 0, totalGold = 0, drops = {} }
-    end
-
-    local entry = mobLoot[npcID]
-    entry.kills = entry.kills + 1
+local function accumulateLoot(entry, lootData)
     entry.totalGold = (entry.totalGold or 0) + lootData.gold
 
     local drops = entry.drops
@@ -35,4 +26,24 @@ LD:On("KILL_LOOTED", function(lootData)
             drop.stacks[1] = (drop.stacks[1] or 0) + 1
         end
     end
+end
+
+LD:On("KILL_LOOTED", function(lootData)
+    local mobLoot = LD.db.mobLoot
+    local npcID = lootData.npcID
+
+    if not mobLoot[npcID] then
+        mobLoot[npcID] = { kills = 0, totalGold = 0, drops = {} }
+    end
+
+    local entry = mobLoot[npcID]
+    entry.kills = entry.kills + 1
+    accumulateLoot(entry, lootData)
+end)
+
+LD:On("KILL_LOOT_ADDENDUM", function(lootData)
+    local mobLoot = LD.db.mobLoot
+    local npcID = lootData.npcID
+    if not mobLoot[npcID] then return end
+    accumulateLoot(mobLoot[npcID], lootData)
 end)
