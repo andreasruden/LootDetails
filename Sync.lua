@@ -5,7 +5,7 @@ local myVersion           -- string, set on ADDON_LOADED
 local memberVersions = {} -- [name] = version string
 local syncActive = false
 local wasInGroup = false
-local committed = {}      -- [guid] = timestamp; set when KILL_LOOTED fires for that guid
+local committed = {}      -- [guid] = { ts, itemIDs }; populated on first KILL_LOOTED for that guid
 
 local function allMembersMatch()
     local count = GetNumGroupMembers()
@@ -51,18 +51,32 @@ end
 
 local function pruneCommitted()
     local cutoff = time() - RECENT_KILL_TTL
-    for guid, ts in pairs(committed) do
-        if ts < cutoff then committed[guid] = nil end
+    for guid, entry in pairs(committed) do
+        if entry.ts < cutoff then committed[guid] = nil end
     end
 end
 
 local function commitLoot(loot)
     pruneCommitted()
-    if committed[loot.guid] then
-        LD:Log("Sync: firing KILL_LOOT_ADDENDUM for guid=" .. loot.guid .. " (" .. #loot.items .. " items, " .. loot.gold .. " copper)")
-        LD:Fire("KILL_LOOT_ADDENDUM", loot)
+    local entry = committed[loot.guid]
+    if entry then
+        -- Only include items not already tracked for this guid
+        local newItems = {}
+        for _, item in ipairs(loot.items) do
+            if not entry.itemIDs[item.itemID] then
+                newItems[#newItems + 1] = item
+                entry.itemIDs[item.itemID] = true
+            end
+        end
+        if #newItems > 0 or loot.gold > 0 then
+            local addendum = { guid = loot.guid, npcID = loot.npcID, items = newItems, gold = loot.gold, timestamp = loot.timestamp }
+            LD:Log("Sync: firing KILL_LOOT_ADDENDUM for guid=" .. loot.guid .. " (" .. #newItems .. " new items, " .. loot.gold .. " copper)")
+            LD:Fire("KILL_LOOT_ADDENDUM", addendum)
+        end
     else
-        committed[loot.guid] = time()
+        local itemIDs = {}
+        for _, item in ipairs(loot.items) do itemIDs[item.itemID] = true end
+        committed[loot.guid] = { ts = time(), itemIDs = itemIDs }
         LD:Log("Sync: firing KILL_LOOTED for guid=" .. loot.guid .. " npcID=" .. loot.npcID .. " (" .. #loot.items .. " items, " .. loot.gold .. " copper)")
         LD:Fire("KILL_LOOTED", loot)
     end
